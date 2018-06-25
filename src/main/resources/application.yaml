@@ -1,0 +1,16 @@
+#redis distribute lock
+redis:
+  lock:
+    pool:
+      maxTotal: 1000
+      maxIdle: 100
+      minIdle: 50
+      maxWaitMillis: 10000
+      testOnBorrow: true
+      testOnReturn: true
+      timeBetweenEvictionRunsMillis: 30000
+      testWhileIdle: true
+      numTestsPerEvictionRun: 50
+      ip: 127.0.0.1
+      port: 6379
+
