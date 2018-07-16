@@ -21,7 +21,7 @@ package com.zmy.microservice.entity;
 import lombok.Data;
 
 /**
- * @description: if you want use {@ErrorCode} with {@Result}, you should define the ErrorCode like this class
+ * @description: 错误码结果，继承该类
  * @author: zmy
  * @create: 2018/6/25
  */

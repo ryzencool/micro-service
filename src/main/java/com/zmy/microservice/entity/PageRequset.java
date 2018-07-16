@@ -18,41 +18,24 @@ package com.zmy.microservice.entity;
  * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import lombok.Data;
+
 /**
- * @description: the pagination request should be extend this class
+ * @description: 需要分页的对象继承该类，使用使用PageHelper来完成
  * @author: zmy
  * @create: 2018/6/22
  */
+@Data
 public class PageRequset {
 
-    private int pageNum;
+    /**
+     * 页数，传1和传0都是查询第一页
+     */
+    private int pageNum = 0;
 
-    private int pageSize;
+    /**
+     * 每页条数
+     */
+    private int pageSize = 10;
 
-    private int skipSize;
-
-    public int getPageNum() {
-        return pageNum;
-    }
-
-    public void setPageNum(int pageNum) {
-        this.pageNum = pageNum;
-        this.skipSize = this.pageSize * this.pageNum;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public int getSkipSize() {
-        return skipSize;
-    }
-
-    public void setSkipSize(int skipSize) {
-        this.skipSize = skipSize;
-    }
 }

@@ -22,9 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author: zmy
@@ -33,7 +31,7 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Result {
+public class StdResponse {
 
     private int code;
 
@@ -41,34 +39,45 @@ public class Result {
 
     private Object data;
 
-    public static Result success(Object src) {
-        return new Result(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMsg(), src);
+    public static StdResponse success(Object src) {
+        return new StdResponse(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMsg(), src);
     }
 
-    public static Result success(int code, String msg, Object src) {
-        return new Result(code, msg, src);
+    public static StdResponse success(int code, String msg, Object src) {
+        return new StdResponse(code, msg, src);
     }
 
-    public static Result fail(ErrorCode errorCode) {
-        return new Result(errorCode.getCode(), errorCode.getMsg(), null);
+    public static StdResponse fail(ErrorCode errorCode) {
+        return new StdResponse(errorCode.getCode(), errorCode.getMsg(), null);
     }
 
-    public static Result fail(int code, String msg) {
-        return new Result(code, msg, null);
+    public static StdResponse fail(int code, String msg) {
+        return new StdResponse(code, msg, null);
+    }
+
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    private static class PageResponse<T> {
+        private long count;
+
+        private List<T> list;
     }
 
     /**
      * return object paging
+     *
      * @param count
      * @param list
      * @param <T>
      * @return
      */
-    public static <T> Result page(int count, List<T> list) {
-        Map<String, Object> map = new HashMap<>(2);
-        map.put("count", count);
-        map.put("list", list);
-        return success(map);
+
+
+    public static <T> StdResponse page(int count, List<T> list) {
+        PageResponse<T> pageResponse = new PageResponse<>(count, list);
+        return success(pageResponse);
     }
 
 }

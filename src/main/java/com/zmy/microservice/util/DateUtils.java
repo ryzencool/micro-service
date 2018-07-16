@@ -22,12 +22,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
+ * @description local date time util
  * @author: zmy
  * @create: 2018/6/20
  */
 public class DateUtils {
 
-    private static final String DEFAULT_PATTERN = "yyyy/MM/dd HH:mm:ss";
+    private static final String DEFAULT_PATTERN = "yyyyMMddHHmmss";
 
     /**
      * get current time

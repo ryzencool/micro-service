@@ -19,14 +19,13 @@ package com.zmy.microservice.redis;
  */
 
 import lombok.Data;
-import redis.clients.jedis.Jedis;
 
 /**
  * @author: zmy
  * @create: 2018/6/25
  */
 @Data
-public class Lock implements AutoCloseable {
+public class RedisLock implements AutoCloseable {
 
     private RedisLockManager redisLockManager;
 
@@ -34,7 +33,7 @@ public class Lock implements AutoCloseable {
 
     private String value;
 
-    public Lock(RedisLockManager redisLockManager, String key, String value) {
+    public RedisLock(RedisLockManager redisLockManager, String key, String value) {
         this.redisLockManager = redisLockManager;
         this.key = key;
         this.value = value;
@@ -45,7 +44,5 @@ public class Lock implements AutoCloseable {
         redisLockManager.release(this);
     }
 
-    public static void main(String[] args) {
-        Jedis jedis = new Jedis();
-    }
+
 }

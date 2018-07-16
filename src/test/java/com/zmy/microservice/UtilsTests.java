@@ -1,4 +1,4 @@
-package com.zmy.microservice.entity;
+package com.zmy.microservice;
 
 /*
  * Copyright (C) 2018 The gingkoo Authors
@@ -18,30 +18,9 @@ package com.zmy.microservice.entity;
  * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.junit.Test;
 
 /**
- * @description the description of error
  * @author: zmy
- * @create: 2018/6/25
+ * @create: 2018/6/26
  */
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ErrorCode {
-
-    /**
-     * 错误码
-     */
-    private int code;
-
-    /**
-     * 错误信息
-     */
-    private String msg;
-
-}
-

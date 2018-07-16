@@ -18,17 +18,43 @@ package com.zmy.microservice.autoconfig;
  * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import com.zmy.microservice.redis.JedisProperties;
 import com.zmy.microservice.redis.RedisLockManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * @author: zmy
  * @create: 2018/6/25
  */
+@Configuration
+@ConditionalOnClass(RedisLockManager.class)
+@EnableConfigurationProperties(JedisProperties.class)
 public class RedisAutoConfiguration {
+
+    @Autowired
+    private JedisProperties properties;
 
     @Bean
     public RedisLockManager redisManager() {
-        return new RedisLockManager();
+        return new RedisLockManager(jedisPool());
+    }
+
+    private JedisPool jedisPool() {
+        JedisPoolConfig config = new JedisPoolConfig();
+        config.setMaxIdle(properties.getMaxIdle());
+        config.setTestOnBorrow(properties.isTestOnBorrow());
+        config.setMinIdle(properties.getMinIdle());
+        config.setMaxTotal(properties.getMaxTotal());
+        config.setMaxWaitMillis(properties.getMaxWaitMillis());
+        config.setNumTestsPerEvictionRun(properties.getNumTestsPerEvictionRun());
+        config.setTimeBetweenEvictionRunsMillis(properties.getTimeBetweenEvictionRunsMillis());
+        config.setTestOnReturn(properties.isTestOnReturn());
+        return new JedisPool(config, properties.getIp(), properties.getPort());
     }
 }

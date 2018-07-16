@@ -29,4 +29,18 @@ public class UUIDGen {
     public static String uuid() {
         return UUID.randomUUID().toString();
     }
+
+    public static String uuidUpper() {
+        return uuid().toUpperCase();
+    }
+
+    public static String cleanUuid() {
+        return uuid().replace("-", "");
+    }
+
+    public static String cleanUuidUpper() {
+        return cleanUuid().toUpperCase();
+    }
+
+
 }

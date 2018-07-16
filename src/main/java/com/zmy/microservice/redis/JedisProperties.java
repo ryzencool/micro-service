@@ -1,4 +1,4 @@
-package com.zmy.microservice.entity;
+package com.zmy.microservice.redis;
 
 /*
  * Copyright (C) 2018 The gingkoo Authors
@@ -18,23 +18,37 @@ package com.zmy.microservice.entity;
  * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author: zmy
- * @create: 2018/6/22
+ * @create: 2018/6/25
  */
+
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class Page<T> {
+@ConfigurationProperties("redis.lock.pool")
+public class JedisProperties {
 
-    private int count;
+    private int maxTotal;
 
-    private List<T> list;
+    private int minIdle;
 
+    private int maxWaitMillis;
+
+    private boolean testOnBorrow;
+
+    private boolean testOnReturn;
+
+    private int timeBetweenEvictionRunsMillis;
+
+    private boolean testWhileIdle;
+
+    private int numTestsPerEvictionRun;
+
+    private int maxIdle;
+
+    private String ip;
+
+    private int port;
 }

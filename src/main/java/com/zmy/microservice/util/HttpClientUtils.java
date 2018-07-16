@@ -18,6 +18,7 @@ package com.zmy.microservice.util;
  * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -31,10 +32,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,8 +69,9 @@ public class HttpClientUtils {
 
     /**
      * consistent with http method get
+     *
      * @param url
-     * @param queryString the url parameter
+     * @param queryString    the url parameter
      * @param readTimeout
      * @param connectTimeout
      * @param coding
@@ -77,6 +80,8 @@ public class HttpClientUtils {
      */
     public static String get(String url, String queryString, int readTimeout, int connectTimeout, String coding) throws Exception {
 
+        assert url != null : "url not null";
+
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(connectTimeout)
                 .setSocketTimeout(readTimeout)
@@ -84,7 +89,7 @@ public class HttpClientUtils {
 
         CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
 
-        String reqUrl = StringUtils.isEmpty(queryString) ? url : url + '?' + queryString;
+        String reqUrl = queryString == null || queryString.length() == 0 ? url : url + '?' + queryString;
         HttpGet getMethod = new HttpGet(reqUrl);
 
         HttpEntity httpEntity = null;
@@ -93,7 +98,7 @@ public class HttpClientUtils {
             HttpResponse response = httpClient.execute(getMethod);
 
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                log.error("get失败:{}", response.getStatusLine());
+                log.error("get failed:{}", response.getStatusLine());
                 throw new Exception(response.getStatusLine().toString());
             } else {
                 httpEntity = response.getEntity();
@@ -122,14 +127,17 @@ public class HttpClientUtils {
 
 
     public static String get(String url, Map<String, String> queryMap) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        queryMap.forEach((k, v) -> {
-            sb.append(k);
-            sb.append("=");
-            sb.append(v);
-            sb.append("&");
-        });
-        String queryString = sb.toString().substring(0, sb.length() - 1);
+        String queryString = null;
+        if (queryMap != null) {
+            StringBuilder sb = new StringBuilder();
+            queryMap.forEach((k, v) -> {
+                sb.append(k);
+                sb.append("=");
+                sb.append(v);
+                sb.append("&");
+            });
+            queryString = sb.toString().substring(0, sb.length() - 1);
+        }
         return get(url, queryString, DEFAULT_READ_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, UTF_8);
     }
 
@@ -139,6 +147,7 @@ public class HttpClientUtils {
 
     /**
      * consistent with http method post
+     *
      * @param url
      * @param requestMap
      * @param readTimeout
@@ -159,7 +168,7 @@ public class HttpClientUtils {
         CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
         try {
             HttpPost httpPost = new HttpPost(url);
-            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+            List<NameValuePair> nvps = new ArrayList<>();
 
             for (Map.Entry<String, String> entry : requestMap.entrySet()) {
                 String key = entry.getKey();
@@ -173,7 +182,7 @@ public class HttpClientUtils {
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();
             if (httpEntity != null) {
-                returnMsg = EntityUtils.toString(httpEntity, coding); //应答消息默认使用与请求相同的字符编码
+                returnMsg = EntityUtils.toString(httpEntity, coding);
                 EntityUtils.consume(httpEntity);
             }
             httpPost.abort();
@@ -189,6 +198,84 @@ public class HttpClientUtils {
 
     public static String post(String url, Map<String, String> requestMap) throws Exception {
         return post(url, requestMap, DEFAULT_READ_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, UTF_8);
+    }
+
+
+    /**
+     * get request with param bean
+     *
+     * @param url
+     * @param param
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public static <T> String getByBean(String url, T param) throws Exception {
+        Map<String, String> map = objectReflect(param);
+        return get(url, map);
+    }
+
+    /**
+     * post request with param bean
+     *
+     * @param url
+     * @param param
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public static <T> String postByBean(String url, T param) throws Exception {
+        Map<String, String> map = objectReflect(param);
+        return post(url, map);
+    }
+
+    /**
+     * post request return bean， assume that response is json
+     *
+     * @param url
+     * @param param
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public static <T, R> R postRetBean(String url, T param, Class<R> rClass) throws Exception {
+        Map<String, String> map = objectReflect(param);
+        ObjectMapper mp = new ObjectMapper();
+        return mp.readValue(post(url, map), rClass);
+    }
+
+
+    /**
+     * get param is bean  and return value is bean
+     *
+     * @param url
+     * @param param query param
+     * @param <T>   query param bean class generic
+     * @param <R>   response value bean class generic
+     * @return
+     * @throws Exception
+     */
+    public static <T, R> R getRetBean(String url, T param, Class<R> rClass) throws Exception {
+        Map<String, String> map = objectReflect(param);
+        ObjectMapper mp = new ObjectMapper();
+        return mp.readValue(get(url, map), rClass);
+    }
+
+    /**
+     * object reflect to map
+     *
+     * @param param
+     * @param <T>
+     * @return
+     * @throws IllegalAccessException
+     */
+    private static <T> Map<String, String> objectReflect(T param) throws IllegalAccessException {
+        Map<String, String> map = new HashMap<>();
+        for (Field field : param.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            map.put(field.getName(), field.get(param).toString());
+        }
+        return map;
     }
 
 }
