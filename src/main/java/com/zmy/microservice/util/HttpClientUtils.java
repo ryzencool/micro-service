@@ -1,25 +1,8 @@
 package com.zmy.microservice.util;
 
-/*
- * Copyright (C) 2018 The gingkoo Authors
- * This file is part of The gingkoo library.
- *
- * The gingkoo is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * The gingkoo is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
- */
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -28,6 +11,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -45,9 +29,8 @@ import java.util.Map;
  * @author: zmy
  * @create: 2018/6/21
  */
-@Slf4j
+//@Slf4j
 public class HttpClientUtils {
-
 
     /**
      * default read timeout
@@ -63,6 +46,10 @@ public class HttpClientUtils {
      * default character encoding, utf-8
      */
     public static final String UTF_8 = "UTF-8";
+
+    public static final String FORM_POST = "application/x-www-form-urlencoded";
+
+    public static final String JSON_POST = "application/json";
 
     private HttpClientUtils() {
     }
@@ -80,8 +67,6 @@ public class HttpClientUtils {
      */
     public static String get(String url, String queryString, int readTimeout, int connectTimeout, String coding) throws Exception {
 
-        assert url != null : "url not null";
-
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(connectTimeout)
                 .setSocketTimeout(readTimeout)
@@ -98,7 +83,6 @@ public class HttpClientUtils {
             HttpResponse response = httpClient.execute(getMethod);
 
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                log.error("get failed:{}", response.getStatusLine());
                 throw new Exception(response.getStatusLine().toString());
             } else {
                 httpEntity = response.getEntity();
@@ -196,10 +180,50 @@ public class HttpClientUtils {
         return returnMsg;
     }
 
+    public static String post(String url, String body, int readTimeout, int connectTimeout, String coding)
+            throws Exception {
+        String returnMsg = "";
+
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(connectTimeout)
+                .setSocketTimeout(readTimeout)
+                .setConnectionRequestTimeout(connectTimeout).build();
+
+        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+        try {
+            HttpPost httpPost = new HttpPost(url);
+            StringEntity stringEntity = new StringEntity(body, coding);
+            httpPost.setEntity(stringEntity);
+//            httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded;charset=" + coding);
+            httpPost.addHeader("Content-Type", "application/json;charset=" + coding);
+            httpPost.addHeader("Accept-Language", "zh-cn");
+
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            HttpEntity httpEntity = httpResponse.getEntity();
+            if (httpEntity != null) {
+                returnMsg = EntityUtils.toString(httpEntity, coding);
+                EntityUtils.consume(httpEntity);
+            }
+            httpPost.abort();
+        } finally {
+            try {
+                httpClient.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+        return returnMsg;
+    }
+
+
     public static String post(String url, Map<String, String> requestMap) throws Exception {
         return post(url, requestMap, DEFAULT_READ_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, UTF_8);
     }
 
+
+    public static String post(String url, String body) throws Exception {
+        return post(url, body, DEFAULT_READ_TIMEOUT, DEFAULT_CONNECT_TIMEOUT, UTF_8);
+    }
 
     /**
      * get request with param bean
@@ -239,14 +263,16 @@ public class HttpClientUtils {
      * @throws Exception
      */
     public static <T, R> R postRetBean(String url, T param, Class<R> rClass) throws Exception {
-        Map<String, String> map = objectReflect(param);
+
         ObjectMapper mp = new ObjectMapper();
-        return mp.readValue(post(url, map), rClass);
+        mp.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        String body = mp.writeValueAsString(param);
+        return mp.readValue(post(url, body), rClass);
     }
 
 
     /**
-     * get param is bean  and return value is bean
+     * get
      *
      * @param url
      * @param param query param
@@ -258,6 +284,7 @@ public class HttpClientUtils {
     public static <T, R> R getRetBean(String url, T param, Class<R> rClass) throws Exception {
         Map<String, String> map = objectReflect(param);
         ObjectMapper mp = new ObjectMapper();
+        mp.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mp.readValue(get(url, map), rClass);
     }
 
@@ -277,5 +304,4 @@ public class HttpClientUtils {
         }
         return map;
     }
-
 }

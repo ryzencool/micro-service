@@ -9,7 +9,6 @@ import javax.validation.constraints.NotNull;
 @ConfigurationProperties(prefix = "gingkoo.dubbo")
 public class DubboProperties {
 
-    private Annotation annotation;
 
     private Application application;
 
@@ -23,13 +22,6 @@ public class DubboProperties {
 
     private Protocol secondaryProtocol;
 
-    public Annotation getAnnotation() {
-        return annotation;
-    }
-
-    public void setAnnotation(Annotation annotation) {
-        this.annotation = annotation;
-    }
 
     public Application getApplication() {
         return application;
@@ -79,14 +71,6 @@ public class DubboProperties {
         this.secondaryProtocol = secondaryProtocol;
     }
 
-    @Data
-    public static class Annotation {
-
-        /**
-         * 扫描注解包路径，多个包用逗号分隔，不填pacakge表示扫描当前ApplicationContext中所有的类
-         */
-        private String scanPackage;
-    }
 
     @Data
     /**

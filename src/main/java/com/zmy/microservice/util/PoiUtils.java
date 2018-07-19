@@ -1,24 +1,7 @@
 package com.zmy.microservice.util;
 
-/*
- * Copyright (C) 2018 The gingkoo Authors
- * This file is part of The gingkoo library.
- *
- * The gingkoo is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * The gingkoo is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with The gingkoo.  If not, see <http://www.gnu.org/licenses/>.
- */
 
-import lombok.extern.slf4j.Slf4j;
+
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -26,7 +9,10 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +21,7 @@ import java.util.List;
  * @author: zmy
  * @create: 2018/6/27
  */
-@Slf4j
+//@Slf4j
 public class PoiUtils {
 
     public static final String XLSX_SUFFIX = ".xlsx";
@@ -52,9 +38,10 @@ public class PoiUtils {
      * @throws IOException
      */
     public static <T> List<T> readExcel(Workbook wb, int sheetNo, int ignore, Class<T> tClass) throws IOException {
-//        XSSFWorkbook wb = new XSSFWorkbook(src);
         Sheet hs = wb.getSheetAt(sheetNo);
         final List<T> list = new ArrayList<>(200);
+        // 通过缓存来提高性能
+        Field[] fields = tClass.getDeclaredFields();
         int rowNo = hs.getPhysicalNumberOfRows();
         try {
             for (int rowi = ignore; rowi < rowNo; rowi++) {
@@ -63,7 +50,6 @@ public class PoiUtils {
                     break;
                 }
                 int cellIndex = row.getPhysicalNumberOfCells();
-                Field[] fields = tClass.getDeclaredFields();
                 T t = tClass.newInstance();
                 for (int i = 0; i < cellIndex; i++) {
                     Field curField = fields[i];
@@ -72,7 +58,13 @@ public class PoiUtils {
                     if (cell != null) {
                         switch (cell.getCellTypeEnum()) {
                             case NUMERIC:
-                                curField.set(t, cell.getNumericCellValue());
+                                // 这里判断是否有小数
+                                double tmp = cell.getNumericCellValue();
+                                if ((tmp % 1) == 0) {
+                                    curField.set(t, String.valueOf((long) tmp));
+                                } else {
+                                    curField.set(t, String.valueOf(tmp));
+                                }
                                 break;
                             case STRING:
                                 curField.set(t, cell.getStringCellValue());
@@ -84,7 +76,7 @@ public class PoiUtils {
                                 curField.set(t, cell.getCellFormula());
                                 break;
                             default:
-                                log.error("unsupported sell type");
+//                                log.error("unsupported sell type");
                                 break;
                         }
                     }
@@ -92,7 +84,8 @@ public class PoiUtils {
                 list.add(t);
             }
         } catch (Exception e) {
-            log.error("read excel to object {} failed", tClass.getName());
+//            log.error("read excel to object {} failed", tClass.getName());
+            System.out.println("java");
         }
         return list;
     }
@@ -127,7 +120,12 @@ public class PoiUtils {
         for (int i = 0; i < src.size(); i++) {
             Row curRow = sheet.createRow(i + 1);
             for (int f = 0; f < fields.length; f++) {
-                curRow.createCell(f).setCellValue(String.valueOf(fields[f].get(src.get(i))));
+                Object ob = fields[f].get(src.get(i));
+                if (ob == null || "".equals(String.valueOf(ob))) {
+                    curRow.createCell(f).setCellValue("");
+                } else {
+                    curRow.createCell(f).setCellValue(String.valueOf(ob));
+                }
             }
         }
         String fullName = filename + suffix;
@@ -150,7 +148,7 @@ public class PoiUtils {
      * @throws IllegalAccessException
      */
     public static <T> String writeXLS(List<T> src, String path, String filename, Class<T> tClass, List<String> header) throws IOException, IllegalAccessException {
-        Workbook workbook = new XSSFWorkbook();
+        Workbook workbook = new HSSFWorkbook();
         return writeExcel(workbook, src, path, filename, XLS_SUFFIX, tClass, header);
     }
 
@@ -168,7 +166,7 @@ public class PoiUtils {
      * @throws IllegalAccessException
      */
     public static <T> String writeXLSX(List<T> src, String path, String filename, Class<T> tClass, List<String> header) throws IOException, IllegalAccessException {
-        Workbook workbook = new HSSFWorkbook();
+        Workbook workbook = new XSSFWorkbook();
         return writeExcel(workbook, src, path, filename, XLSX_SUFFIX, tClass, header);
     }
 
@@ -203,4 +201,15 @@ public class PoiUtils {
         Workbook workbook = new XSSFWorkbook(src);
         return readExcel(workbook, sheetNo, ignore, tClass);
     }
+
+
+    public static void main(String[] args) {
+//        Jedis jedis = new Jedis("redis://:bitmap@10.1.3.76:6380/3");
+//        String s = jedis.get("SENDMAIL_10.2.20.142_meiyong_zhou@163.com_6");
+//        System.out.println("连接成功" + s);
+//        System.out.println(s.indexOf("code"));
+//        System.out.println(s.substring(188, 194));
+    }
 }
+
+
